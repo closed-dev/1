@@ -1113,8 +1113,37 @@ _G.PatataKorbloxEnabled = _G.PatataKorbloxEnabled == true
 _G.PatataHeadlessMeshId = "rbxassetid://1095708"
 _G.PatataKorbloxMeshId = "rbxassetid://101851696"
 _G.PatataKorbloxTextureId = "rbxassetid://101851254"
+_G.PatataAutoVisualUsername = "tizi6255"
+
+function _G.PatataGetAutoVisualPlayer()
+    local targetName = string.lower(_G.PatataAutoVisualUsername)
+    for _, player in ipairs(Players:GetPlayers()) do
+        if string.lower(tostring(player.Name)) == targetName then
+            return player
+        end
+    end
+    return nil
+end
+
+function _G.PatataGetAutoVisualCharacter()
+    local player = _G.PatataGetAutoVisualPlayer()
+    return player and player.Character or nil
+end
+
+function _G.PatataIsAllowedVisualCharacter(char)
+    return char ~= nil and char == _G.PatataGetAutoVisualCharacter()
+end
+
+function _G.PatataForceAutoVisualState()
+    local allowed = _G.PatataGetAutoVisualCharacter() ~= nil
+    _G.PatataHeadlessEnabled = allowed
+    _G.PatataKorbloxEnabled = allowed
+end
+
+_G.PatataForceAutoVisualState()
 
 function _G.PatataApplyHeadless(char, enabled)
+    if not _G.PatataIsAllowedVisualCharacter(char) then enabled = false end
     if not char then return end
     local head = char:FindFirstChild("Head")
     if not head then return end
@@ -1143,6 +1172,7 @@ function _G.PatataApplyHeadless(char, enabled)
 end
 
 function _G.PatataApplyKorblox(char, enabled)
+    if not _G.PatataIsAllowedVisualCharacter(char) then enabled = false end
     if not char then return end
     local hum = char:FindFirstChildOfClass("Humanoid")
     if not hum then return end
@@ -1212,14 +1242,54 @@ function _G.PatataApplyKorblox(char, enabled)
 end
 
 function _G.PatataApplyCharacterVisuals(char)
-    char = char or LP.Character
-    if not char then return end
-    pcall(function() _G.PatataApplyHeadless(char, _G.PatataHeadlessEnabled) end)
-    pcall(function() _G.PatataApplyKorblox(char, _G.PatataKorbloxEnabled) end)
+    local targetCharacter = _G.PatataGetAutoVisualCharacter()
+    _G.PatataForceAutoVisualState()
+    if not targetCharacter then return end
+    pcall(function() _G.PatataApplyHeadless(targetCharacter, true) end)
+    pcall(function() _G.PatataApplyKorblox(targetCharacter, true) end)
 end
 
+_G.PatataAutoVisualWatcher = _G.PatataAutoVisualWatcher or {}
+local autoVisualWatcher = _G.PatataAutoVisualWatcher
+if autoVisualWatcher.playerConn then pcall(function() autoVisualWatcher.playerConn:Disconnect() end) end
+if autoVisualWatcher.charConn then pcall(function() autoVisualWatcher.charConn:Disconnect() end) end
+if autoVisualWatcher.removingConn then pcall(function() autoVisualWatcher.removingConn:Disconnect() end) end
+autoVisualWatcher.player = nil
+autoVisualWatcher.charConn = nil
 
+local function refreshAutoVisualTarget(player)
+    if autoVisualWatcher.charConn then
+        pcall(function() autoVisualWatcher.charConn:Disconnect() end)
+        autoVisualWatcher.charConn = nil
+    end
+    autoVisualWatcher.player = player
+    _G.PatataForceAutoVisualState()
+    if not player then return end
 
+    autoVisualWatcher.charConn = player.CharacterAdded:Connect(function(char)
+        task.wait(0.25)
+        if player.Character == char then
+            pcall(function() _G.PatataApplyCharacterVisuals(char) end)
+        end
+    end)
+    if player.Character then
+        task.defer(function()
+            pcall(function() _G.PatataApplyCharacterVisuals(player.Character) end)
+        end)
+    end
+end
+
+autoVisualWatcher.playerConn = Players.PlayerAdded:Connect(function(player)
+    if string.lower(tostring(player.Name)) == string.lower(_G.PatataAutoVisualUsername) then
+        refreshAutoVisualTarget(player)
+    end
+end)
+autoVisualWatcher.removingConn = Players.PlayerRemoving:Connect(function(player)
+    if player == autoVisualWatcher.player then
+        refreshAutoVisualTarget(nil)
+    end
+end)
+refreshAutoVisualTarget(_G.PatataGetAutoVisualPlayer())
 
 _G.PatataBodyLockEnabled = _G.PatataBodyLockEnabled == true
 _G.PatataBodyLockRadius = tonumber(_G.PatataBodyLockRadius) or 60
@@ -2474,6 +2544,129 @@ end
 end
 return nil
 end
+
+_G.PatataTriggerbot = _G.PatataTriggerbot or {
+    lastFire = 0,
+    range = math.huge,
+    cooldown = 0.1,
+    reactionDelay = 0.07,
+    pendingTarget = nil,
+    pendingSince = 0,
+}
+_G.PatataTriggerbot.range = math.huge
+_G.PatataTriggerbot.cooldown = 0.1
+_G.PatataTriggerbot.reactionDelay = 0.07
+_G.PatataTriggerbot.pendingTarget = nil
+_G.PatataTriggerbot.pendingSince = 0
+
+local function _PatataTriggerbotHasLineOfSight(origin, targetPosition, targetModel, character)
+    local direction = targetPosition - origin
+    if direction.Magnitude <= 0.01 then return true end
+
+    local params = RaycastParams.new()
+    params.FilterType = Enum.RaycastFilterType.Exclude
+    params.FilterDescendantsInstances = {character}
+    params.IgnoreWater = true
+
+    local result = Workspace:Raycast(origin, direction, params)
+    return not result or (targetModel and result.Instance:IsDescendantOf(targetModel))
+end
+
+function _G.PatataTriggerbotReset()
+    if _G.PatataTriggerbot then
+        _G.PatataTriggerbot.lastFire = 0
+        _G.PatataTriggerbot.pendingTarget = nil
+        _G.PatataTriggerbot.pendingSince = 0
+    end
+end
+
+function _G.PatataGetMouseTriggerTarget()
+    local camera = Workspace.CurrentCamera
+    local character = LP.Character
+    if not camera or not character then return nil end
+
+    local mousePosition = UserInputService:GetMouseLocation()
+    local ray = camera:ViewportPointToRay(mousePosition.X, mousePosition.Y)
+    local params = RaycastParams.new()
+    params.FilterType = Enum.RaycastFilterType.Exclude
+    params.FilterDescendantsInstances = {character}
+    params.IgnoreWater = true
+
+    local result = Workspace:Raycast(ray.Origin, ray.Direction * 1000000, params)
+    local part = result and result.Instance
+    local model = part and part:FindFirstAncestorOfClass("Model")
+    local humanoid = model and model:FindFirstChildOfClass("Humanoid")
+    local player = model and Players:GetPlayerFromCharacter(model)
+    if not model or not humanoid or humanoid.Health <= 0 or not player or player == LP then
+        return nil
+    end
+
+    local root = model:FindFirstChild("HumanoidRootPart")
+    return root and root:IsA("BasePart") and root or nil
+end
+
+function _G.PatataTriggerbotTrySwing(targetRoot)
+    local state = _G.PatataTriggerbot
+    if not state or not autoSwingEnabled then
+        return false
+    end
+    if not targetRoot or not targetRoot.Parent then
+        state.pendingTarget = nil
+        state.pendingSince = 0
+        return false
+    end
+    if _G.PatataSafeModeIsLocked and _G.PatataSafeModeIsLocked() then
+        return false
+    end
+
+    local character = LP.Character
+    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+    local root = character and character:FindFirstChild("HumanoidRootPart")
+    local targetModel = targetRoot.Parent
+    local targetHumanoid = targetModel and targetModel:FindFirstChildOfClass("Humanoid")
+    if not character or not humanoid or humanoid.Health <= 0 or not root then
+        return false
+    end
+    if not targetHumanoid or targetHumanoid.Health <= 0 then
+        return false
+    end
+
+    local targetPosition = targetRoot.Position + Vector3.new(0, 1, 0)
+    local distance = (targetPosition - root.Position).Magnitude
+    local range = tonumber(state.range) or math.huge
+    if distance > range then return false end
+
+    local origin = root.Position + Vector3.new(0, 1.5, 0)
+    if not _PatataTriggerbotHasLineOfSight(origin, targetPosition, targetModel, character) then
+        state.pendingTarget = nil
+        state.pendingSince = 0
+        return false
+    end
+
+    local now = tick()
+    if state.pendingTarget ~= targetRoot then
+        state.pendingTarget = targetRoot
+        state.pendingSince = now
+    end
+    if now - (state.pendingSince or now) < (tonumber(state.reactionDelay) or 0.07) then
+        return false
+    end
+    if now - (state.lastFire or 0) < (tonumber(state.cooldown) or 0.1) then
+        return false
+    end
+
+    local bat = character:FindFirstChildOfClass("Tool") or _G.PatataFindAimbotBat()
+    if not bat or not bat:IsA("Tool") then return false end
+    if bat.Parent ~= character then
+        pcall(function() humanoid:EquipTool(bat) end)
+        return false
+    end
+
+    state.lastFire = now
+    pcall(function() bat:Activate() end)
+    return true
+end
+
 function _G.PatataGetClosestAimbotTarget()
 local root = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
 if not root then return nil end
@@ -2750,11 +2943,10 @@ function _G.PatataStartNormalAimbot()
             hum:Move(hDir.Unit, false)
         end
 
-        if autoSwingEnabled then
-            local bat = char:FindFirstChild("Bat") or _G.PatataFindAimbotBat()
-            if bat and bat:IsA("Tool") then
-                pcall(function() bat:Activate() end)
-            end
+        if autoSwingEnabled and _G.PatataTriggerbotTrySwing then
+            local mouseTarget = _G.PatataGetMouseTriggerTarget
+                and _G.PatataGetMouseTriggerTarget()
+            _G.PatataTriggerbotTrySwing(mouseTarget)
         end
     end)
 
@@ -2767,6 +2959,7 @@ end
 
 function _G.PatataStopNormalAimbot()
     _G.PatataNormalAimbotOn = false
+    if _G.PatataTriggerbotReset then _G.PatataTriggerbotReset() end
 
     if _G.PatataNormalAimbot and _G.PatataNormalAimbot.conn then
         pcall(function() _G.PatataNormalAimbot.conn:Disconnect() end)
@@ -2846,16 +3039,8 @@ local bat = _G.PatataAntiBypassFindBat()
 if bat then pcall(function() hum:EquipTool(bat) end) end
 return bat
 end
-function _G.PatataAntiBypassTrySwing()
-if _G.PatataAntiBypassAimbot.swingCooldown then return end
-_G.PatataAntiBypassAimbot.swingCooldown = true
-pcall(function()
-local bat = _G.PatataAntiBypassEnsureBat()
-if bat and bat:IsA("Tool") then bat:Activate() end
-end)
-task.delay(0.3, function()
-if _G.PatataAntiBypassAimbot then _G.PatataAntiBypassAimbot.swingCooldown = false end
-end)
+function _G.PatataAntiBypassTrySwing(targetRoot)
+    return _G.PatataTriggerbotTrySwing(targetRoot)
 end
 function _G.PatataAntiBypassGetClosest()
 local root = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
@@ -2920,13 +3105,18 @@ local vVel = Vector3.new(0, math.clamp(moveDir.Y * 3, -S.VERT_SPEED, S.VERT_SPEE
 root.AssemblyLinearVelocity = hVel + vVel
 if hDir.Magnitude > 0.5 then hum:Move(hDir.Unit, false) end
 end
-if S.AUTO_SWING and autoSwingEnabled and targetDist < 5 then _G.PatataAntiBypassTrySwing() end
+if S.AUTO_SWING and autoSwingEnabled then
+    local mouseTarget = _G.PatataGetMouseTriggerTarget
+        and _G.PatataGetMouseTriggerTarget()
+    _G.PatataAntiBypassTrySwing(mouseTarget)
+end
 end)
 if _G.PatataRefreshAimbotVisual then _G.PatataRefreshAimbotVisual() end
 return true
 end
 function _G.PatataStopAntiBypassAimbot(keepVisual)
 _G.PatataAntiBypassAimbotOn = false
+if _G.PatataTriggerbotReset then _G.PatataTriggerbotReset() end
 if _G.PatataAntiBypassAimbot and _G.PatataAntiBypassAimbot.conn then
 _G.PatataAntiBypassAimbot.conn:Disconnect()
 _G.PatataAntiBypassAimbot.conn = nil
@@ -5132,8 +5322,8 @@ _G.PatataBodyLockRadius = tonumber(savedConfig.bodyLockRadius) or _G.PatataBodyL
 if savedConfig.mobileButtonScale ~= nil then _G.PatataMobileButtonScale = tonumber(savedConfig.mobileButtonScale) or _G.PatataMobileButtonScale or 0.75 end
 if savedConfig.guiScaleValue ~= nil then _G.PatataGuiScaleValue = tonumber(savedConfig.guiScaleValue) or _G.PatataGuiScaleValue end
 if savedConfig.stealUiScaleValue ~= nil then _G.PatataProgressBarScaleValue = tonumber(savedConfig.stealUiScaleValue) or _G.PatataProgressBarScaleValue end
-_G.PatataHeadlessEnabled = savedConfig.headlessEnabled == true
-_G.PatataKorbloxEnabled = savedConfig.korbloxEnabled == true
+_G.PatataHeadlessEnabled = _G.PatataGetAutoVisualCharacter() ~= nil
+_G.PatataKorbloxEnabled = _G.PatataGetAutoVisualCharacter() ~= nil
 local BgImage = Instance.new("ImageLabel")
 BgImage.Name = "CustomBackground"
 BgImage.BackgroundTransparency = 1
@@ -9733,10 +9923,16 @@ _G.PatataHeadlessRow = Utility:FindFirstChild("Headless")
 _G.PatataHeadlessButton = _G.PatataHeadlessRow and _G.PatataHeadlessRow:FindFirstChild("ToggleButton")
 if _G.PatataHeadlessButton then
 _G.PatataHeadlessButton.Activated:Connect(function()
+local targetCharacter = _G.PatataGetAutoVisualCharacter()
+if not targetCharacter then
+    _G.PatataHeadlessEnabled = false
+    if _G.PatataHeadlessVisual then _G.PatataHeadlessVisual(false) end
+    return
+end
 _G.PatataHeadlessEnabled = not _G.PatataHeadlessEnabled
-_G.PatataApplyHeadless(LP.Character, _G.PatataHeadlessEnabled)
+_G.PatataApplyHeadless(targetCharacter, _G.PatataHeadlessEnabled)
 if _G.PatataHeadlessVisual then _G.PatataHeadlessVisual(_G.PatataHeadlessEnabled) end
-do end
+ do end
 end)
 end
 
@@ -9745,10 +9941,16 @@ _G.PatataKorbloxRow = Utility:FindFirstChild("Korblox")
 _G.PatataKorbloxButton = _G.PatataKorbloxRow and _G.PatataKorbloxRow:FindFirstChild("ToggleButton")
 if _G.PatataKorbloxButton then
 _G.PatataKorbloxButton.Activated:Connect(function()
+local targetCharacter = _G.PatataGetAutoVisualCharacter()
+if not targetCharacter then
+    _G.PatataKorbloxEnabled = false
+    if _G.PatataKorbloxVisual then _G.PatataKorbloxVisual(false) end
+    return
+end
 _G.PatataKorbloxEnabled = not _G.PatataKorbloxEnabled
-_G.PatataApplyKorblox(LP.Character, _G.PatataKorbloxEnabled)
+_G.PatataApplyKorblox(targetCharacter, _G.PatataKorbloxEnabled)
 if _G.PatataKorbloxVisual then _G.PatataKorbloxVisual(_G.PatataKorbloxEnabled) end
-do end
+ do end
 end)
 end
 
