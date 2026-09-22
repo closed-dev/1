@@ -1762,27 +1762,115 @@ local function toggleKorblox()
     end)
 end
 
-ContextActionService:BindAction("GazeToggleGui", function(_, state)
-    if state == Enum.UserInputState.Begin then
-        screenGui.Enabled = not screenGui.Enabled
-    end
-    return Enum.ContextActionResult.Pass
-end, false, Enum.KeyCode.LeftControl)
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/raw/main/main.lua"))()
 
-ContextActionService:BindAction("GazeToggleHead", function(_, state)
-    if state == Enum.UserInputState.Begin then
+local Window = WindUI:CreateWindow({
+    Title = "Gaze",
+    Icon = "rbxassetid://10723407383",
+    Author = "Gaze",
+    Folder = "GazeConfig",
+    Size = UDim2.fromOffset(520, 400),
+    Transparent = true,
+    Theme = "Dark",
+    SideBarWidth = 180,
+    HasOutline = true,
+    User = {
+        Enabled = true,
+        Anonymous = true,
+    },
+    KeySystem = false,
+})
+
+local MainTab = Window:Tab({ Title = "Character", Icon = "user" })
+
+MainTab:Toggle({
+    Title = "Korblox",
+    Desc = "Toggle Korblox leg on/off",
+    Value = _G.AdaptKorbloxEnabled,
+    Callback = function(value)
+        local char = LP.Character
+        if not char then return end
+        _G.AdaptKorbloxEnabled = value
+        pcall(function()
+            _G.AdaptApplyKorblox(char, value)
+        end)
+    end,
+})
+
+MainTab:Toggle({
+    Title = "Headless",
+    Desc = "Toggle head visibility (off = headless)",
+    Value = not cabezaVisible,
+    Callback = function(value)
+        if value == (not cabezaVisible) then return end
         toggleCabeza()
-        Notify("Headless", cabezaVisible and "Cabeza visible" or "Headless activado", 2)
-    end
-    return Enum.ContextActionResult.Pass
-end, false, Enum.KeyCode.F6)
+    end,
+})
 
-ContextActionService:BindAction("GazeToggleKorblox", function(_, state)
-    if state == Enum.UserInputState.Begin then
-        toggleKorblox()
-        Notify("Korblox", _G.AdaptKorbloxEnabled and "Korblox ON" or "Korblox OFF", 2)
-    end
-    return Enum.ContextActionResult.Pass
-end, false, Enum.KeyCode.M)
+MainTab:Toggle({
+    Title = "Clothing",
+    Desc = "Toggle custom clothing",
+    Value = _G.AdaptClothingEnabled,
+    Callback = function(value)
+        local char = LP.Character
+        if not char then return end
+        _G.AdaptClothingEnabled = value
+        pcall(function()
+            _G.AdaptApplyClothing(char, value)
+        end)
+    end,
+})
+
+MainTab:Divider()
+
+MainTab:Button({
+    Title = "Toggle GAZE GUI",
+    Desc = "Show/Hide the animation GUI",
+    Callback = function()
+        screenGui.Enabled = not screenGui.Enabled
+    end,
+})
+
+MainTab:Keybind({
+    Title = "Toggle GUI Key",
+    Desc = "Key to show/hide the animation GUI",
+    Value = "LeftControl",
+    Callback = function(key)
+        if key then
+            pcall(function()
+                ContextActionService:UnbindAction("GazeToggleGuiCfg")
+                ContextActionService:BindAction("GazeToggleGuiCfg", function(_, state)
+                    if state == Enum.UserInputState.Begin then
+                        screenGui.Enabled = not screenGui.Enabled
+                    end
+                    return Enum.ContextActionResult.Pass
+                end, false, key)
+            end)
+        end
+    end,
+})
+
+MainTab:Keybind({
+    Title = "Toggle Korblox Key",
+    Desc = "Key to toggle Korblox",
+    Value = "RightShift",
+    Callback = function(key)
+        if key then
+            pcall(function()
+                ContextActionService:UnbindAction("GazeToggleKorbloxCfg")
+                ContextActionService:BindAction("GazeToggleKorbloxCfg", function(_, state)
+                    if state == Enum.UserInputState.Begin then
+                        toggleKorblox()
+                    end
+                    return Enum.ContextActionResult.Pass
+                end, false, key)
+            end)
+        end
+    end,
+})
+
+Window:SelectTab(1)
+
+Notify("WindUI", "Cargado. Usa la ventana para togglear Korblox.", 4)
 
 end)
