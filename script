@@ -1831,44 +1831,6 @@ MainTab:Button({
     end,
 })
 
-MainTab:Keybind({
-    Title = "Toggle GUI Key",
-    Desc = "Key to show/hide the animation GUI",
-    Value = "LeftControl",
-    Callback = function(key)
-        if key then
-            pcall(function()
-                ContextActionService:UnbindAction("GazeToggleGuiCfg")
-                ContextActionService:BindAction("GazeToggleGuiCfg", function(_, state)
-                    if state == Enum.UserInputState.Begin then
-                        screenGui.Enabled = not screenGui.Enabled
-                    end
-                    return Enum.ContextActionResult.Pass
-                end, false, key)
-            end)
-        end
-    end,
-})
-
-MainTab:Keybind({
-    Title = "Toggle Korblox Key",
-    Desc = "Key to toggle Korblox",
-    Value = "RightShift",
-    Callback = function(key)
-        if key then
-            pcall(function()
-                ContextActionService:UnbindAction("GazeToggleKorbloxCfg")
-                ContextActionService:BindAction("GazeToggleKorbloxCfg", function(_, state)
-                    if state == Enum.UserInputState.Begin then
-                        toggleKorblox()
-                    end
-                    return Enum.ContextActionResult.Pass
-                end, false, key)
-            end)
-        end
-    end,
-})
-
 Window:SelectTab(1)
 
 Notify("WindUI", "Cargado. Usa la ventana para togglear Korblox.", 4)
