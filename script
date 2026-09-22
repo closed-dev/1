@@ -1783,6 +1783,6 @@ ContextActionService:BindAction("GazeToggleKorblox", function(_, state)
         Notify("Korblox", _G.AdaptKorbloxEnabled and "Korblox ON" or "Korblox OFF", 2)
     end
     return Enum.ContextActionResult.Pass
-end, false, Enum.KeyCode.F7)
+end, false, Enum.KeyCode.M)
 
 end)
