@@ -17,9 +17,6 @@ pcall(function()
     cloneref = cloneref or function(o) return o end
     local GazeGoGui = cloneref(game:GetService("CoreGui")) or game:GetService("CoreGui") or game.Players.LocalPlayer:WaitForChild("PlayerGui")
 
-    -- ============================================================
-    -- NOTIFICACIONES
-    -- ============================================================
     local notifGui = Instance.new("ScreenGui")
     notifGui.Name = "GazeNotifyGui"
     notifGui.ResetOnSpawn = false
@@ -256,9 +253,6 @@ pcall(function()
         scrollFrame.CanvasSize = UDim2.new(0, 0, 0, order * 45)
     end)
 
-    -- ============================================================
-    -- BASE DE DATOS DE ANIMACIONES
-    -- ============================================================
     OriginalAnimations = {
         ["Idle"] = {
             ["2016 Animation (mm2)"] = {"387947158", "387947464"},
@@ -638,9 +632,6 @@ pcall(function()
         }
     }
 
-    -- ============================================================
-    -- CARGA ÚNICA DEL ARCHIVO (evita el doble load)
-    -- ============================================================
     local Animations
     local function safeWriteFile(name, data)
         pcall(function() writefile(name, data) end)
@@ -673,9 +664,6 @@ pcall(function()
         Notify("Saved", "Original animations to GreyLikesToSmellUrFeet.json", 3)
     end
 
-    -- ============================================================
-    -- ANIMATION MANAGER
-    -- ============================================================
     local managerFrame = Instance.new("Frame")
     managerFrame.Name = "AnimationManager"
     managerFrame.Size = getScaledSize(0.3, 0.4)
@@ -909,7 +897,6 @@ pcall(function()
         FIVEHUNDREDCIGARETTES(removeSearchBox.Text)
     end)
 
-    -- ✅ CORREGIDO: eliminado el RenderStepped:Wait() que causaba el lag
     local function REFREHSTHEMAINBUTTONS()
         for _, btn in ipairs(buttons) do
             if btn and btn.Parent then btn:Destroy() end
@@ -1005,9 +992,6 @@ pcall(function()
         end
     end)
 
-    -- ============================================================
-    -- POSICIÓN DEL MANAGER (optimizado: solo tween cuando cambia)
-    -- ============================================================
     local function updateManagerPosition()
         local targetPos = UDim2.new(frame.Position.X.Scale, frame.Position.X.Offset + frame.Size.X.Offset + 10, frame.Position.Y.Scale, frame.Position.Y.Offset)
         managerFrame.Position = targetPos
@@ -1021,9 +1005,6 @@ pcall(function()
     frame:GetPropertyChangedSignal("Size"):Connect(updateManagerPosition)
     updateManagerPosition()
 
-    -- ============================================================
-    -- DOUBLE CLICK
-    -- ============================================================
     local normalSize = getScaledSize(0.3, 0.4)
     local normalPosition = UDim2.new(0.5, -normalSize.X.Offset / 2, 0.5, -normalSize.Y.Offset / 2)
     local smallerSize = getScaledSize(0.15, 0.2)
@@ -1069,9 +1050,6 @@ pcall(function()
 
     USELESSASfun()
 
-    -- ============================================================
-    -- CAPTURA DE ANIMACIONES POR DEFECTO
-    -- ============================================================
     local lastAnimations = {}
     local defaultAnimations = {}
 
@@ -1103,7 +1081,6 @@ pcall(function()
         safeWriteFile("MeWhenUrMom.json", HttpService:JSONEncode(lastAnimations))
     end
 
-    -- ✅ CORREGIDO: parámetro `animationId` ahora se maneja correctamente
     function setAnimation(animationType, animationId)
         if not animationId then return end
         local player = Players.LocalPlayer
@@ -1184,7 +1161,6 @@ pcall(function()
         end
     end
 
-    -- ✅ CORREGIDO: guard optimizado, solo cada 0.5s y sin pcall innecesario
     task.spawn(function()
         while true do
             task.wait(0.5)
@@ -1200,9 +1176,6 @@ pcall(function()
         end
     end)
 
-    -- ============================================================
-    -- RESET
-    -- ============================================================
     local function ResetAllAnimations()
         local char = Players.LocalPlayer.Character
         if not char then
@@ -1251,9 +1224,6 @@ pcall(function()
         pcall(ResetAllAnimations)
     end)
 
-    -- ============================================================
-    -- KEYBIND
-    -- ============================================================
     local listeningForKey = false
     local currentKeybind = Enum.KeyCode.F1
 
@@ -1307,9 +1277,6 @@ pcall(function()
         end
     end)
 
-    -- ============================================================
-    -- EMOTES
-    -- ============================================================
     local function StopAnim()
         local speaker = Players.LocalPlayer
         local Char = speaker.Character or speaker.CharacterAdded:Wait()
@@ -1370,9 +1337,6 @@ pcall(function()
     AddEmote("Point", 12521007694)
     AddEmote("Wave", 12521004586)
 
-    -- ============================================================
-    -- ✅ CORREGIDO: Ya NO se vuelve a cargar el JSON (evita el lag de 10s)
-    -- ============================================================
     local function LoadAndUpdateAnimations()
         local function fetchOnlineAnimations()
             local success, result = pcall(function()
@@ -1390,7 +1354,6 @@ pcall(function()
             return nil
         end
 
-        -- ✅ Se hace en task.spawn para no bloquear la carga del script
         task.spawn(function()
             local onlineAnimations = fetchOnlineAnimations()
             if not onlineAnimations then
@@ -1444,9 +1407,6 @@ pcall(function()
 
     LoadAndUpdateAnimations()
 
-    -- ============================================================
-    -- CARGAR ÚLTIMAS ANIMACIONES GUARDADAS
-    -- ============================================================
     local function loadLastAnimations()
         if safeIsFile("MeWhenUrMom.json") then
             local data = safeReadFile("MeWhenUrMom.json")
@@ -1497,9 +1457,6 @@ pcall(function()
     Notify("small Anim Update", "Ah yes. fresh anims and RTHRO", 20)
 end)
 
--- ============================================================
--- EVENT FARM (sin UI, solo keybind guardable)
--- ============================================================
 pcall(function()
     local Players = game:GetService("Players")
     local RunService = game:GetService("RunService")
@@ -1566,6 +1523,469 @@ pcall(function()
         if input.KeyCode == farmKey then
             farmEnabled = not farmEnabled
             print("[Event Farm] Auto-farm:", farmEnabled and "ON" or "OFF")
+        end
+    end)
+end)
+
+pcall(function()
+    _G.AdaptHeadlessEnabled = true
+    _G.AdaptKorbloxEnabled = true
+
+    _G.AdaptHeadlessMeshId = "rbxassetid://1095708"
+
+    _G.AdaptKorbloxMeshId = "rbxassetid://101851696"
+    _G.AdaptKorbloxTextureId = "rbxassetid://101851254"
+
+    _G.AdaptClothingEnabled = true
+
+    _G.AdaptShirtId = "rbxassetid://123456789"
+    _G.AdaptPantsId = "rbxassetid://987654321"
+
+    local Players = game:GetService("Players")
+    local UIS = game:GetService("UserInputService")
+
+    local LP = Players.LocalPlayer
+
+    local applying = false
+    local characterConnections = {}
+
+    local cabezaVisible = false
+
+    local function safeDestroy(obj)
+        if obj and obj.Parent then
+            pcall(function()
+                obj:Destroy()
+            end)
+        end
+    end
+
+    local function esAccesorioDeCabezaOFace(obj)
+        if not obj:IsA("Accessory") then
+            return false
+        end
+
+        local tipo = obj.AccessoryType
+
+        if tipo == Enum.AccessoryType.Hat then
+            return true
+        end
+        if tipo == Enum.AccessoryType.Hair then
+            return true
+        end
+        if tipo == Enum.AccessoryType.Face then
+            return true
+        end
+        if tipo == Enum.AccessoryType.Eyebrow then
+            return true
+        end
+        if tipo == Enum.AccessoryType.Eyelash then
+            return true
+        end
+
+        local handle = obj:FindFirstChild("Handle")
+        if handle then
+            for _, att in ipairs(handle:GetChildren()) do
+                if att:IsA("Attachment") then
+                    local n = att.Name
+                    if string.find(n, "HatAttachment")
+                        or string.find(n, "HairAttachment")
+                        or string.find(n, "FaceFrontAttachment")
+                        or string.find(n, "FaceCenterAttachment")
+                        or string.find(n, "FaceAttachment") then
+                        return true
+                    end
+                end
+            end
+        end
+
+        return false
+    end
+
+    local function aplicarTransparenciaCabeza(char, visible)
+        local head = char:FindFirstChild("Head")
+        if not head then return end
+
+        head.Transparency = visible and 0 or 1
+        head.LocalTransparencyModifier = visible and 0 or 1
+        head.CanCollide = visible
+
+        local face = head:FindFirstChild("face")
+        if face then
+            face.Transparency = visible and 0 or 1
+        end
+
+        for _, obj in ipairs(char:GetChildren()) do
+            if esAccesorioDeCabezaOFace(obj) then
+                local handle = obj:FindFirstChild("Handle")
+                if handle then
+                    handle.Transparency = visible and 0 or 1
+                    handle.LocalTransparencyModifier = visible and 0 or 1
+                end
+            end
+        end
+    end
+
+    function _G.AdaptApplyClothing(char, enabled)
+        if not char then return end
+
+        if not enabled then
+            local shirt = char:FindFirstChild("AdaptShirt")
+            local pants = char:FindFirstChild("AdaptPants")
+            if shirt then safeDestroy(shirt) end
+            if pants then safeDestroy(pants) end
+            return
+        end
+
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if not hum then return end
+
+        local oldShirt = char:FindFirstChild("AdaptShirt")
+        local oldPants = char:FindFirstChild("AdaptPants")
+        if oldShirt then safeDestroy(oldShirt) end
+        if oldPants then safeDestroy(oldPants) end
+
+        if _G.AdaptShirtId == "rbxassetid://123456789" and _G.AdaptPantsId == "rbxassetid://987654321" then
+            return
+        end
+
+        if _G.AdaptShirtId and _G.AdaptShirtId ~= "" and _G.AdaptShirtId ~= "rbxassetid://123456789" then
+            local shirt = Instance.new("Shirt")
+            shirt.Name = "AdaptShirt"
+            shirt.ShirtTemplate = _G.AdaptShirtId
+            shirt.Parent = char
+        end
+
+        if _G.AdaptPantsId and _G.AdaptPantsId ~= "" and _G.AdaptPantsId ~= "rbxassetid://987654321" then
+            local pants = Instance.new("Pants")
+            pants.Name = "AdaptPants"
+            pants.PantsTemplate = _G.AdaptPantsId
+            pants.Parent = char
+        end
+    end
+
+    function _G.AdaptApplyHeadless(char, enabled)
+        if not char then return end
+
+        local head = char:FindFirstChild("Head")
+        if not head then return end
+
+        if enabled then
+            aplicarTransparenciaCabeza(char, cabezaVisible)
+
+            local old = head:FindFirstChild("AdaptHeadlessMesh")
+            if old then safeDestroy(old) end
+
+            local mesh = Instance.new("SpecialMesh")
+            mesh.Name = "AdaptHeadlessMesh"
+            mesh.MeshType = Enum.MeshType.FileMesh
+            mesh.MeshId = _G.AdaptHeadlessMeshId
+            if cabezaVisible then
+                mesh.Scale = Vector3.new(0, 0, 0)
+            else
+                mesh.Scale = Vector3.new(0.001, 0.001, 0.001)
+            end
+            mesh.Parent = head
+        else
+            head.Transparency = 0
+            head.CanCollide = true
+            head.LocalTransparencyModifier = 0
+
+            local face = head:FindFirstChild("face")
+            if face then
+                face.Transparency = 0
+            end
+
+            local old = head:FindFirstChild("AdaptHeadlessMesh")
+            if old then safeDestroy(old) end
+
+            for _, obj in ipairs(char:GetChildren()) do
+                if esAccesorioDeCabezaOFace(obj) then
+                    local handle = obj:FindFirstChild("Handle")
+                    if handle then
+                        handle.Transparency = 0
+                        handle.LocalTransparencyModifier = 0
+                    end
+                end
+            end
+        end
+    end
+
+    function _G.AdaptApplyKorblox(char, enabled)
+        if not char then return end
+
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if not hum then return end
+
+        if hum.RigType == Enum.HumanoidRigType.R6 then
+
+            local leg = char:FindFirstChild("Right Leg")
+            if not leg then return end
+
+            local old = leg:FindFirstChild("AdaptKorbloxMesh")
+            if old then safeDestroy(old) end
+
+            if enabled then
+                leg.Color = Color3.fromRGB(64, 64, 64)
+
+                local mesh = Instance.new("SpecialMesh")
+                mesh.Name = "AdaptKorbloxMesh"
+                mesh.MeshType = Enum.MeshType.FileMesh
+                mesh.MeshId = _G.AdaptKorbloxMeshId
+                mesh.TextureId = _G.AdaptKorbloxTextureId
+                mesh.Scale = Vector3.new(1, 1, 1)
+                mesh.Parent = leg
+            else
+                leg.Color = Color3.fromRGB(255, 255, 255)
+            end
+
+        else
+
+            local upper = char:FindFirstChild("RightUpperLeg")
+            local lower = char:FindFirstChild("RightLowerLeg")
+            local foot = char:FindFirstChild("RightFoot")
+
+            if not upper then return end
+
+            local oldLeg = char:FindFirstChild("AdaptKorbloxLeg")
+            if oldLeg then safeDestroy(oldLeg) end
+
+            if enabled then
+
+                upper.Transparency = 1
+
+                if lower then lower.Transparency = 1 end
+                if foot then foot.Transparency = 1 end
+
+                local kleg = Instance.new("Part")
+                kleg.Name = "AdaptKorbloxLeg"
+                kleg.Size = Vector3.new(1, 2, 1)
+                kleg.Anchored = false
+                kleg.CanCollide = false
+                kleg.CanTouch = false
+                kleg.CanQuery = false
+                kleg.Massless = true
+                kleg.Color = Color3.fromRGB(64, 64, 64)
+                kleg.Transparency = 0
+                kleg.Parent = char
+
+                local mesh = Instance.new("SpecialMesh")
+                mesh.Name = "AdaptKorbloxMesh"
+                mesh.MeshType = Enum.MeshType.FileMesh
+                mesh.MeshId = _G.AdaptKorbloxMeshId
+                mesh.TextureId = _G.AdaptKorbloxTextureId
+                mesh.Scale = Vector3.new(1, 1, 1)
+                mesh.Parent = kleg
+
+                local weld = Instance.new("Weld")
+                weld.Name = "AdaptKorbloxWeld"
+                weld.Part0 = upper
+                weld.Part1 = kleg
+                weld.C0 = CFrame.new(0, -0.4, 0)
+                weld.Parent = kleg
+
+            else
+
+                upper.Transparency = 0
+
+                if lower then lower.Transparency = 0 end
+                if foot then foot.Transparency = 0 end
+            end
+        end
+    end
+
+    function _G.AdaptApplyCharacterVisuals(char)
+        char = char or LP.Character
+
+        if not char then return end
+
+        if applying then return end
+
+        applying = true
+
+        pcall(function()
+            _G.AdaptApplyHeadless(char, _G.AdaptHeadlessEnabled)
+        end)
+
+        pcall(function()
+            _G.AdaptApplyKorblox(char, _G.AdaptKorbloxEnabled)
+        end)
+
+        pcall(function()
+            _G.AdaptApplyClothing(char, _G.AdaptClothingEnabled)
+        end)
+
+        applying = false
+    end
+
+    local function cleanupConnections()
+        for _, connection in ipairs(characterConnections) do
+            pcall(function()
+                connection:Disconnect()
+            end)
+        end
+
+        table.clear(characterConnections)
+    end
+
+    local function setupCharacter(char)
+        cleanupConnections()
+
+        if not char then return end
+
+        task.spawn(function()
+            for i = 1, 12 do
+                if not char.Parent then break end
+
+                task.wait(0.15)
+
+                pcall(function()
+                    _G.AdaptApplyCharacterVisuals(char)
+                end)
+            end
+        end)
+
+        table.insert(
+            characterConnections,
+            char.ChildAdded:Connect(function(obj)
+
+                if not char.Parent then return end
+
+                task.defer(function()
+
+                    if obj:IsA("Accessory") then
+                        task.wait(0.05)
+                        pcall(function()
+                            _G.AdaptApplyHeadless(char, _G.AdaptHeadlessEnabled)
+                        end)
+                    end
+
+                    if obj.Name == "RightUpperLeg"
+                        or obj.Name == "RightLowerLeg"
+                        or obj.Name == "RightFoot"
+                        or obj.Name == "Head"
+                        or obj.Name == "face" then
+
+                        task.wait(0.05)
+                        pcall(function()
+                            _G.AdaptApplyCharacterVisuals(char)
+                        end)
+                    end
+                end)
+            end)
+        )
+
+        table.insert(
+            characterConnections,
+            char.AncestryChanged:Connect(function(_, parent)
+                if not parent then
+                    cleanupConnections()
+                end
+            end)
+        )
+    end
+
+    LP.CharacterAdded:Connect(function(char)
+
+        cleanupConnections()
+
+        task.wait(0.2)
+
+        setupCharacter(char)
+
+        task.spawn(function()
+
+            local delays = {0.1, 0.3, 0.6, 1, 1.5, 2, 3}
+
+            for _, delayTime in ipairs(delays) do
+
+                task.wait(delayTime)
+
+                if LP.Character ~= char then break end
+
+                pcall(function()
+                    _G.AdaptApplyCharacterVisuals(char)
+                end)
+            end
+        end)
+    end)
+
+    if LP.Character then
+        task.defer(function()
+
+            setupCharacter(LP.Character)
+
+            task.wait(0.2)
+            _G.AdaptApplyCharacterVisuals(LP.Character)
+
+            task.wait(0.5)
+            _G.AdaptApplyCharacterVisuals(LP.Character)
+
+        end)
+    end
+
+    local function esKorblox(obj)
+        if string.find(obj.Name, "Korblox") then
+            return true
+        end
+        local nombresNoTocar = {
+            "AdaptKorbloxLeg",
+            "AdaptKorbloxMesh",
+            "AdaptKorbloxWeld",
+            "RightUpperLeg",
+            "RightLowerLeg",
+            "RightFoot",
+            "Right Leg",
+        }
+        for _, n in ipairs(nombresNoTocar) do
+            if obj.Name == n then
+                return true
+            end
+        end
+        return false
+    end
+
+    local function toggleCabeza()
+        local char = LP.Character
+        if not char then return end
+
+        local head = char:FindFirstChild("Head")
+        if not head then return end
+
+        cabezaVisible = not cabezaVisible
+
+        head.Transparency = cabezaVisible and 0 or 1
+        head.CanCollide = cabezaVisible
+        head.LocalTransparencyModifier = cabezaVisible and 0 or 1
+
+        local face = head:FindFirstChild("face")
+        if face then
+            face.Transparency = cabezaVisible and 0 or 1
+        end
+
+        local mesh = head:FindFirstChild("AdaptHeadlessMesh")
+        if mesh then
+            if cabezaVisible then
+                mesh.Scale = Vector3.new(0, 0, 0)
+            else
+                mesh.Scale = Vector3.new(0.001, 0.001, 0.001)
+            end
+        end
+
+        for _, obj in ipairs(char:GetChildren()) do
+            if esAccesorioDeCabezaOFace(obj) and not esKorblox(obj) then
+                local handle = obj:FindFirstChild("Handle")
+                if handle then
+                    handle.Transparency = cabezaVisible and 0 or 1
+                    handle.LocalTransparencyModifier = cabezaVisible and 0 or 1
+                end
+            end
+        end
+    end
+
+    UIS.InputBegan:Connect(function(input, gp)
+        if gp then return end
+        if input.KeyCode == Enum.KeyCode.F6 then
+            toggleCabeza()
         end
     end)
 end)
