@@ -1053,6 +1053,38 @@ pcall(function()
     local lastAnimations = {}
     local defaultAnimations = {}
 
+    local function freeze()
+        local player = Players.LocalPlayer
+        local character = player.Character or player.CharacterAdded:Wait()
+        local humanoid = character:WaitForChild("Humanoid")
+        humanoid.PlatformStand = true
+        if player and player.Character then
+            task.spawn(function()
+                for _, part in ipairs(player.Character:GetDescendants()) do
+                    if part:IsA("BasePart") and not part.Anchored then
+                        part.Anchored = true
+                    end
+                end
+            end)
+        end
+    end
+
+    local function unfreeze()
+        local player = Players.LocalPlayer
+        local character = player.Character or player.CharacterAdded:Wait()
+        local humanoid = character:WaitForChild("Humanoid")
+        humanoid.PlatformStand = false
+        if player and player.Character then
+            task.spawn(function()
+                for _, part in ipairs(player.Character:GetDescendants()) do
+                    if part:IsA("BasePart") and part.Anchored then
+                        part.Anchored = false
+                    end
+                end
+            end)
+        end
+    end
+
     local function captureAnimateIds(animate)
         local snap = {}
         for _, trackName in ipairs({"idle","walk","run","jump","fall","climb","swim","swimidle"}) do
@@ -1089,6 +1121,9 @@ pcall(function()
         local Animate = Char:FindFirstChild("Animate")
         if not Animate then return end
 
+        freeze()
+        task.wait(0.1)
+
         local success, err = pcall(function()
             if animationType == "Idle" then
                 lastAnimations.Idle = animationId
@@ -1119,6 +1154,9 @@ pcall(function()
             saveLastAnimations()
             if _G.GazeRefreshGuard then _G.GazeRefreshGuard() end
         end)
+
+        task.wait(0.05)
+        unfreeze()
 
         if not success then
             warn("Failed to set animation:", err)
@@ -1466,7 +1504,7 @@ pcall(function()
 
     local FARM_KEY_FILE = "EventFarmKeybind.json"
     local farmKey = Enum.KeyCode.RightControl
-    local farmEnabled = true
+    local farmEnabled = false
     local farmAccumulator = 0
     local farmInterval = 0.3
     local farmConn = nil
@@ -1522,7 +1560,6 @@ pcall(function()
         if input.UserInputType ~= Enum.UserInputType.Keyboard then return end
         if input.KeyCode == farmKey then
             farmEnabled = not farmEnabled
-            print("[Event Farm] Auto-farm:", farmEnabled and "ON" or "OFF")
         end
     end)
 end)
